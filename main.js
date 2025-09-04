@@ -1,6 +1,5 @@
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
-import togpx from "@tmcw/togpx";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
