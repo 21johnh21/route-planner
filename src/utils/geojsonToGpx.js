@@ -1,11 +1,28 @@
 // src/utils/geojsonToGpx.js
 
+const FEET_TO_METERS = 0.3048;
+
+/**
+ * Calculate distance between two coordinates (lon/lat) in meters using Haversine formula
+ */
+function haversineDistance([lon1, lat1], [lon2, lat2]) {
+  const R = 6371000; // Earth radius in meters
+  const toRad = (deg) => (deg * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
 /**
  * Linearly interpolate between two coordinates
- * @param {[number, number]} start [lon, lat]
- * @param {[number, number]} end [lon, lat]
- * @param {number} segments number of points to insert between
- * @returns {[number, number][]}
  */
 function interpolatePoints(start, end, segments) {
   const points = [];
@@ -19,15 +36,15 @@ function interpolatePoints(start, end, segments) {
 
 /**
  * Convert GeoJSON FeatureCollection (from Mapbox Draw) into GPX string
- * Adds interpolation points to ensure the track is visible in apps like Google Earth
- *
- * @param {GeoJSON.FeatureCollection} geojson
- * @param {number} densify number of extra points to add between each pair
- * @returns {string} GPX XML string
+ * Adds interpolated points every ~50ft to ensure visibility in apps like Google Earth
  */
-export function geojsonToGpxCustom(geojson, densify = 10) {
+export function geojsonToGpxCustom(geojson, spacingFeet = 50) {
   let gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="Route Planner">\n`;
+<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="Route Planner" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">\n`;
+
+  gpx += `<metadata><name>Route Export</name></metadata>\n`;
+
+  let currentTime = new Date();
 
   geojson.features.forEach((feature, i) => {
     if (feature.geometry.type === "LineString") {
@@ -38,19 +55,26 @@ export function geojsonToGpxCustom(geojson, densify = 10) {
         const [lon1, lat1] = coords[j];
         const [lon2, lat2] = coords[j + 1];
 
-        // add start point
-        gpx += `  <trkpt lat="${lat1}" lon="${lon1}"/>\n`;
+        // always add the starting point
+        gpx += `  <trkpt lat="${lat1}" lon="${lon1}"><ele>0</ele><time>${currentTime.toISOString()}</time></trkpt>\n`;
+        currentTime = new Date(currentTime.getTime() + 1000);
 
-        // add interpolated points
-        const extraPoints = interpolatePoints([lon1, lat1], [lon2, lat2], densify);
+        // compute how many extra points needed
+        const distMeters = haversineDistance([lon1, lat1], [lon2, lat2]);
+        const segments = Math.floor(distMeters / (spacingFeet * FEET_TO_METERS));
+
+        // insert extra points
+        const extraPoints = interpolatePoints([lon1, lat1], [lon2, lat2], segments);
         extraPoints.forEach(([lon, lat]) => {
-          gpx += `  <trkpt lat="${lat}" lon="${lon}"/>\n`;
+          gpx += `  <trkpt lat="${lat}" lon="${lon}"><ele>0</ele><time>${currentTime.toISOString()}</time></trkpt>\n`;
+          currentTime = new Date(currentTime.getTime() + 1000);
         });
       }
 
-      // add final point
+      // add the final point
       const [lonLast, latLast] = coords[coords.length - 1];
-      gpx += `  <trkpt lat="${latLast}" lon="${lonLast}"/>\n`;
+      gpx += `  <trkpt lat="${latLast}" lon="${lonLast}"><ele>0</ele><time>${currentTime.toISOString()}</time></trkpt>\n`;
+      currentTime = new Date(currentTime.getTime() + 1000);
 
       gpx += `</trkseg></trk>\n`;
     }
