@@ -23,11 +23,18 @@
           <button id="freeDrawMode">🖌 Free Draw</button>
         </div>
         <button id="export" title="Export GPX">⬇️</button>
-        <label><input type="checkbox" id="snapToggle" checked /> Snap to trails</label>
-        <label><input type="checkbox" id="showTrails" checked /> Show trails</label>
+        <label class="switch">
+          Snap to trails
+          <input type="checkbox" id="snapToggle" checked />
+          <span class="slider"></span>
+        </label>
+
+        <label class="switch">
+          Show trails
+          <input type="checkbox" id="showTrails" checked />
+          <span class="slider"></span>
+        </label>
       </div>
-      <button id="export" title="Export GPX">⬇️</button>
-    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
