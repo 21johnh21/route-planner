@@ -60,6 +60,7 @@ freeDrawBtn.onclick = () => {
   mode = "free";
   map.dragPan.disable();
   map.getCanvas().style.cursor = "crosshair";
+  Draw.changeMode("simple_select");
   setActive(freeDrawBtn);
 };
 
