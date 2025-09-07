@@ -57,6 +57,7 @@ map.dragPan.enable();
 const panBtn = document.getElementById("panMode");
 const drawBtn = document.getElementById("drawMode");
 const exportBtn = document.getElementById("export");
+const freeDrawBtn = document.getElementById("freeDrawMode");
 
 function setActive(button) {
   [panBtn, drawBtn, freeDrawBtn].forEach((b) => b.classList.remove("active"));
@@ -74,23 +75,48 @@ panBtn.onclick = () => {
 drawBtn.onclick = () => {
   mode = "draw";
   map.dragPan.disable();
-  Draw.changeMode("draw_line_string");
-  setActive(drawBtn);
-};
-
-drawBtn.onclick = () => {
-  mode = "draw";
-  map.dragPan.disable();
   map.getCanvas().style.cursor = "crosshair"; // crosshair cursor
   Draw.changeMode("draw_line_string");
   setActive(drawBtn);
 };
 
-const freeDrawBtn = document.getElementById("freeDrawMode");
-
 let freeDrawing = false;
 let tempCoords = [];
 const SPACING_METERS = 25 * 0.3048; // 25ft in meters (~7.62 meters)
+
+map.on("load", () => {
+  map.addSource("tempFreeDraw", {
+    type: "geojson",
+    data: {
+      type: "FeatureCollection",
+      features: [],
+    },
+  });
+
+  map.addLayer({
+    id: "tempFreeDrawLine",
+    type: "line",
+    source: "tempFreeDraw",
+    paint: {
+      "line-color": "#ff0000",
+      "line-width": 3,
+    },
+  });
+});
+
+function updateTempLine(coords) {
+  const source = map.getSource("tempFreeDraw");
+  if (!source) return;
+  source.setData({
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        geometry: { type: "LineString", coordinates: coords },
+      },
+    ],
+  });
+}
 
 function haversine([lon1, lat1], [lon2, lat2]) {
   const R = 6371000;
@@ -117,6 +143,7 @@ map.on("mousedown", (e) => {
   if (mode !== "free") return;
   freeDrawing = true;
   tempCoords = [[e.lngLat.lng, e.lngLat.lat]];
+  updateTempLine(tempCoords);
 });
 
 // add points as mouse moves, but only store in tempCoords
@@ -127,6 +154,7 @@ map.on("mousemove", (e) => {
   const dist = haversine(last, curr);
   if (dist >= SPACING_METERS) {
     tempCoords.push(curr);
+    updateTempLine(tempCoords);
   }
 });
 
@@ -139,6 +167,7 @@ map.on("mouseup", (e) => {
       properties: {},
     };
     Draw.add(line);
+    updateTempLine([]);
   }
   if (mode === "free") {
     freeDrawing = false;
