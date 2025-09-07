@@ -1,28 +1,43 @@
 body {
-    margin: 0;
-    padding: 0;
-  }
-  #map {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 100%;
-  }
-  .controls {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: white;
-    padding: 10px;
-    border-radius: 5px;
-    font-family: sans-serif;
-    z-index: 1;
-  }
-  button {
-    margin: 3px;
-    padding: 5px 10px;
-  }
-  button.active {
-    background: #0078ff;
-    color: white;
-  }
+  margin: 0;
+  padding: 0;
+}
+#map {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+}
+
+.controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 8px;
+  z-index: 1;
+}
+
+.mode-group {
+  display: flex;
+}
+
+.mode-group button {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+
+.mode-group button.active {
+  background: #007aff;
+  color: #fff;
+}
+
+#export {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}

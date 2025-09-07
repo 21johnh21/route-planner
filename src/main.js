@@ -59,13 +59,14 @@ const drawBtn = document.getElementById("drawMode");
 const exportBtn = document.getElementById("export");
 
 function setActive(button) {
-  [panBtn, drawBtn].forEach((b) => b.classList.remove("active"));
+  [panBtn, drawBtn, freeDrawBtn].forEach((b) => b.classList.remove("active"));
   button.classList.add("active");
 }
 
 panBtn.onclick = () => {
   mode = "pan";
   map.dragPan.enable();
+  map.getCanvas().style.cursor = "grab"; // pan cursor
   Draw.changeMode("simple_select");
   setActive(panBtn);
 };
@@ -77,12 +78,13 @@ drawBtn.onclick = () => {
   setActive(drawBtn);
 };
 
-// stay in draw mode
-map.on("draw.create", () => {
-  if (mode === "draw") {
-    Draw.changeMode("draw_line_string");
-  }
-});
+drawBtn.onclick = () => {
+  mode = "draw";
+  map.dragPan.disable();
+  map.getCanvas().style.cursor = "crosshair"; // crosshair cursor
+  Draw.changeMode("draw_line_string");
+  setActive(drawBtn);
+};
 
 const freeDrawBtn = document.getElementById("freeDrawMode");
 
@@ -105,8 +107,8 @@ function haversine([lon1, lat1], [lon2, lat2]) {
 
 freeDrawBtn.onclick = () => {
   mode = "free";
-  freeDrawing = false;
   map.dragPan.disable();
+  map.getCanvas().style.cursor = "crosshair"; // crosshair cursor
   setActive(freeDrawBtn);
 };
 
