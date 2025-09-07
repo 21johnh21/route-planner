@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@mapbox/mapbox-gl-draw": "^1.5.0",
-    "mapbox-gl": "^3.14.0"
+    "mapbox-gl": "^3.14.0",
+    "osmtogeojson": "^3.0.0-beta.5"
   }
 }
