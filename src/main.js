@@ -6,13 +6,40 @@ import { geojsonToGpxCustom } from "./utils/geojsonToGpx.js";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
+// default center (fallback if location not available)
+const defaultCenter = [-98.5795, 39.8283]; // USA center
+
 // init map
 const map = new mapboxgl.Map({
   container: "map",
   style: "mapbox://styles/mapbox/outdoors-v12",
-  center: [-98.5795, 39.8283],
+  center: defaultCenter,
   zoom: 3,
 });
+
+// try to get user location
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const userCoords = [position.coords.longitude, position.coords.latitude];
+      map.setCenter(userCoords);
+      map.setZoom(13);
+
+      // add a marker for user location
+      new mapboxgl.Marker({ color: "blue" })
+        .setLngLat(userCoords)
+        .setPopup(new mapboxgl.Popup().setText("You are here"))
+        .addTo(map);
+    },
+    (error) => {
+      console.warn("Geolocation error:", error.message);
+      // fallback: keep default center
+    },
+    { enableHighAccuracy: true, timeout: 5000 }
+  );
+} else {
+  console.warn("Geolocation not supported by this browser");
+}
 
 map.addControl(new mapboxgl.NavigationControl());
 
