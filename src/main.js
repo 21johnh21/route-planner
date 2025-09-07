@@ -209,19 +209,27 @@ map.on("load", () => {
     },
   });
 
-  // Fetch trails for initial view
-  const bounds = map.getBounds();
-  fetchTrails([bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()]);
+  // Fetch trails for initial view if zoom >= 12
+  if (map.getZoom() >= 12) {
+    const bounds = map.getBounds();
+    fetchTrails([bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()]);
+  }
 
   // Set default mode to pan
   setActive(panBtn);
   map.getCanvas().style.cursor = "grab";
 });
 
-// Fetch trails when map moves
+// Fetch trails when map moves if zoom >= 12, else hide trails
 map.on("moveend", () => {
-  const bounds = map.getBounds();
-  fetchTrails([bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()]);
+  if (map.getZoom() >= 12) {
+    const bounds = map.getBounds();
+    fetchTrails([bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()]);
+  } else {
+    if (trailLayerAdded && map.getLayer("trailsLayer")) {
+      map.setLayoutProperty("trailsLayer", "visibility", "none");
+    }
+  }
 });
 
 // Free draw handlers
