@@ -92,3 +92,24 @@ input:checked + .slider {
 input:checked + .slider::before {
   transform: translateX(20px);
 }
+
+#export,
+#delete {
+  padding: 6px 12px;
+  margin-left: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fff;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+#export:hover,
+#delete:hover {
+  background-color: #f0f0f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}

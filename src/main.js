@@ -21,7 +21,6 @@ map.addControl(new mapboxgl.NavigationControl());
 // init draw
 const Draw = new MapboxDraw({
   displayControlsDefault: false,
-  controls: { trash: true },
 });
 map.addControl(Draw);
 
@@ -34,6 +33,7 @@ const freeDrawBtn = document.getElementById("freeDrawMode");
 const exportBtn = document.getElementById("export");
 const snapToggle = document.getElementById("snapToggle");
 const showTrailsCheckbox = document.getElementById("showTrails");
+const deleteBtn = document.getElementById("delete");
 
 function setActive(button) {
   [panBtn, drawBtn, freeDrawBtn].forEach((b) => b.classList.remove("active"));
@@ -62,6 +62,16 @@ freeDrawBtn.onclick = () => {
   map.getCanvas().style.cursor = "crosshair";
   Draw.changeMode("simple_select");
   setActive(freeDrawBtn);
+};
+
+// Custom delete all handler
+deleteBtn.onclick = () => {
+  const allFeatures = Draw.getAll();
+  if (allFeatures.features.length === 0) {
+    alert("No routes to delete!");
+    return;
+  }
+  Draw.deleteAll();
 };
 
 // Geolocation
