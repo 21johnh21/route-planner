@@ -123,7 +123,7 @@ function haversine([lon1, lat1], [lon2, lat2]) {
 }
 
 // Snap to nearest trail point within threshold (meters)
-function snapToTrail(lngLat, geojson, thresholdMeters = 10) {
+function snapToTrail(lngLat, geojson, thresholdMeters = 20) {
   if (!snappingEnabled || !geojson) return [lngLat.lng, lngLat.lat];
 
   let nearest = null;
@@ -253,11 +253,11 @@ map.on("mousedown", (e) => {
 
 map.on("mousemove", (e) => {
   if (!freeDrawing || tempCoords.length === 0) return;
+  const snapped = snapToTrail(e.lngLat, trailGeoJSON); 
   const last = tempCoords[tempCoords.length - 1];
-  const curr = [e.lngLat.lng, e.lngLat.lat];
-  const dist = haversine(last, curr);
+  const dist = haversine(last, snapped);
   if (dist >= SPACING_METERS) {
-    tempCoords.push(curr);
+    tempCoords.push(snapped);
     updateTempLine(tempCoords);
   }
 });
