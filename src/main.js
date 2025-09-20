@@ -17,7 +17,6 @@ const SNAP_THRESHOLD_METERS = 20;
 
 // ---------- Initialize map & controls ----------
 const map = initMap(DEFAULT_CENTER);
-map.addControl(new mapboxgl.NavigationControl());
 
 const Draw = new MapboxDraw({ displayControlsDefault: false });
 map.addControl(Draw);
