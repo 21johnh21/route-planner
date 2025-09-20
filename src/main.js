@@ -63,7 +63,7 @@ if (deleteBtn) {
   });
 }
 
-// ---------- Geolocation (optional) ----------
+// ---------- Geolocation ----------
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
