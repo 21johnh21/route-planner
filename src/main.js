@@ -158,5 +158,8 @@ if (showTrailsCheckbox) {
     if (map.getLayer && map.getLayer("trailsLayer")) {
       map.setLayoutProperty("trailsLayer", "visibility", visible ? "visible" : "none");
     }
+    if (map.getLayer && map.getLayer("trailsCenterLine")) {
+      map.setLayoutProperty("trailsCenterLine", "visibility", visible ? "visible" : "none");
+    }
   });
 }

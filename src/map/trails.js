@@ -9,7 +9,23 @@ export function addTrailLayer(map, geojson, showTrailsCheckbox) {
       id: "trailsLayer",
       type: "line",
       source: "trails",
-      paint: { "line-color": "#00ff00", "line-width": 3 },
+      paint: { 
+        "line-color": "#808080", 
+        "line-width": 4,
+        "line-dasharray": [3, 4],
+        "line-opacity": 0.7
+      },
+    });
+    map.addLayer({
+      id: "trailsCenterLine",
+      type: "line",
+      source: "trails",
+      paint: {
+        "line-color": "#FFFF00",
+        "line-width": 2,
+        "line-opacity": 0.7,
+        "line-dasharray": [1, 0]
+      },
     });
     trailLayerAdded = true;
   } else {
@@ -18,6 +34,7 @@ export function addTrailLayer(map, geojson, showTrailsCheckbox) {
 
   const visible = showTrailsCheckbox.checked;
   map.setLayoutProperty("trailsLayer", "visibility", visible ? "visible" : "none");
+  map.setLayoutProperty("trailsCenterLine", "visibility", visible ? "visible" : "none");
 }
 
 export async function fetchTrails(map, bounds, showTrailsCheckbox) {
