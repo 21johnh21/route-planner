@@ -145,3 +145,15 @@ label.switch input:checked + .slider:before {
 label.switch .slider {
   cursor: pointer;
 }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+#map {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+}

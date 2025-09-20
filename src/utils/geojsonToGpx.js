@@ -83,3 +83,7 @@ export function geojsonToGpxCustom(geojson, spacingFeet = 50) {
   gpx += `</gpx>`;
   return gpx;
 }
+
+export function geojsonToGpx(geojson, spacingFeet = 50) {
+  return geojsonToGpxCustom(geojson, spacingFeet);
+}
