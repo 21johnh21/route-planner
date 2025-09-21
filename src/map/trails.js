@@ -1,6 +1,7 @@
 import osmtogeojson from "osmtogeojson";
 
 let trailLayerAdded = false;
+let styleImageMissingListenerAdded = false;
 
 export function addTrailLayer(map, geojson, showTrailsCheckbox) {
   if (!trailLayerAdded) {
@@ -28,6 +29,53 @@ export function addTrailLayer(map, geojson, showTrailsCheckbox) {
       },
     });
     trailLayerAdded = true;
+    map.addLayer({
+      id: "trailheads",
+      type: "symbol",
+      source: "trails",
+      layout: {
+        "icon-image": "trailhead-icon", // Custom icon, loaded dynamically if missing
+        "icon-size": 1.2,
+        "icon-allow-overlap": true,
+        "text-offset": [0, 1.5],
+        "text-anchor": "top"
+      },
+      paint: {
+        "text-color": "#000000"
+      }
+    });
+
+    if (map && typeof map.on === "function" && !styleImageMissingListenerAdded) {
+      map.on("styleimagemissing", function(e) {
+        if (e.id === "trailhead-icon") {
+          // Create a small solid circle icon (e.g., 32x32 px, black circle)
+          const size = 32;
+          const radius = 12;
+          const data = new Uint8ClampedArray(size * size * 4);
+          for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+              const dx = x - size / 2 + 0.5;
+              const dy = y - size / 2 + 0.5;
+              if (dx * dx + dy * dy <= radius * radius) {
+                // Black circle with full opacity
+                const offset = 4 * (y * size + x);
+                data[offset] = 0;     // R
+                data[offset + 1] = 0; // G
+                data[offset + 2] = 0; // B
+                data[offset + 3] = 255; // A
+              }
+            }
+          }
+          map.addImage(
+            "trailhead-icon",
+            { width: size, height: size, data: data },
+            { pixelRatio: 2 }
+          );
+        }
+      });
+      styleImageMissingListenerAdded = true;
+    }
+    
   } else {
     map.getSource("trails").setData(geojson);
   }
@@ -45,6 +93,7 @@ export async function fetchTrails(map, bounds, showTrailsCheckbox) {
         way["highway"~"path|footway|cycleway|pedestrian|track|steps|bridleway"](${s},${w},${n},${e});
         relation["route"~"hiking|bicycle|foot"](${s},${w},${n},${e});
         relation["leisure"="park"](${s},${w},${n},${e});
+        node["information"="trailhead"]["informal"!="yes"](${s},${w},${n},${e});
     );
     out body; >; out skel qt;
   `;
