@@ -18,6 +18,58 @@ const SNAP_THRESHOLD_METERS = 20;
 // ---------- Initialize map & controls ----------
 const map = initMap(DEFAULT_CENTER);
 
+// Add raster satellite layer source and layer
+map.on("load", () => {
+  if (!map.getSource("satellite-layer")) {
+    map.addSource("satellite-layer", {
+      type: "raster",
+      url: "mapbox://mapbox.satellite",
+      tileSize: 256,
+    });
+  }
+  if (!map.getLayer("satellite-layer")) {
+    map.addLayer({
+      id: "satellite-layer",
+      type: "raster",
+      source: "satellite-layer",
+      layout: { visibility: "none" },
+    });
+  }
+});
+
+// Add satellite toggle button control
+class SatelliteToggleControl {
+  onAdd(map) {
+    this._map = map;
+    this._container = document.createElement("div");
+    this._container.className = "mapboxgl-ctrl mapboxgl-ctrl-group";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.title = "Toggle Satellite Layer";
+    button.textContent = "Sat";
+    button.style.fontWeight = "bold";
+    button.style.fontSize = "12px";
+    button.style.cursor = "pointer";
+    this._container.appendChild(button);
+
+    button.addEventListener("click", () => {
+      const visibility = map.getLayoutProperty("satellite-layer", "visibility");
+      if (visibility === "visible") {
+        map.setLayoutProperty("satellite-layer", "visibility", "none");
+      } else {
+        map.setLayoutProperty("satellite-layer", "visibility", "visible");
+      }
+    });
+
+    return this._container;
+  }
+  onRemove() {
+    this._container.parentNode.removeChild(this._container);
+    this._map = undefined;
+  }
+}
+map.addControl(new SatelliteToggleControl(), "top-right");
+
 const Draw = new MapboxDraw({ displayControlsDefault: false });
 map.addControl(Draw);
 
