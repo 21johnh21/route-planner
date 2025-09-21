@@ -10,6 +10,30 @@ import { setupFreeDraw } from "./map/freeDraw.js";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
+// Function to show trailhead popup with feature properties
+function showTrailheadPopup(feature, map) {
+  if (!feature || !feature.geometry) return;
+
+  let coords = feature.geometry.coordinates;
+
+  // If coordinates is nested, flatten it
+  if (Array.isArray(coords[0]) && typeof coords[0][0] === "number") {
+    coords = coords[0];
+  }
+
+  // Validate
+  if (!Array.isArray(coords) || coords.some(c => typeof c !== "number")) {
+    console.warn("Invalid coordinates for trailhead feature:", feature);
+    return;
+  }
+
+  const html = "<pre>" + JSON.stringify(feature.properties, null, 2) + "</pre>";
+  new mapboxgl.Popup()
+    .setLngLat(coords)
+    .setHTML(html)
+    .addTo(map);
+}
+
 // ---------- Config / constants ----------
 const DEFAULT_CENTER = [-98.5795, 39.8283]; // continental USA
 const SPACING_METERS = 25 * 0.3048; // 25 ft -> meters (~7.62)
@@ -72,6 +96,35 @@ map.addControl(new SatelliteToggleControl(), "top-right");
 
 const Draw = new MapboxDraw({ displayControlsDefault: false });
 map.addControl(Draw);
+
+map.on("load", () => {
+ // Click handler for trailheads
+  map.on("click", (e) => {
+    // Query features under the click point for the trailheads layer
+    const features = map.queryRenderedFeatures(e.point, {
+      layers: ["trailheads"]
+    });
+
+    if (!features.length) return; // No trailhead here
+
+    const feature = features[0];
+
+    // Show popup
+    showTrailheadPopup(feature, map);
+    console.log("Trailhead clicked:", feature.properties);;
+  });
+});
+map.on("mouseenter", "trailheads", () => {
+  console.log("Mouse entered trailhead");
+  map.getCanvas().style.cursor = "pointer";
+});
+
+map.on("mouseleave", "trailheads", () => {
+  map.getCanvas().style.cursor = "";
+});
+
+
+
 
 // ---------- DOM elements ----------
 const panBtn = document.getElementById("panMode");
