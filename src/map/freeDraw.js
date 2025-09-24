@@ -59,6 +59,7 @@ export function setupFreeDraw(map, Draw, trailGeoJSON, snapToggle, SPACING_METER
       };
       try {
         Draw.add(feature);
+        map.fire("draw.create", { features: [feature] });
       } catch (err) {
         console.error("Failed to add drawn feature:", err);
       }
