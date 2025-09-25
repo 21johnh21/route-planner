@@ -1,7 +1,35 @@
 import osmtogeojson from "osmtogeojson";
 
+// TODO: Eventually move this to my own api 
+
 let trailLayerAdded = false;
 let styleImageMissingListenerAdded = false;
+
+function lon2tile(lon, zoom) {
+  return Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
+}
+
+function lat2tile(lat, zoom) {
+  const rad = (lat * Math.PI) / 180;
+  return Math.floor(
+    ((1 -
+      Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) /
+      2) *
+      Math.pow(2, zoom)
+  );
+}
+
+function tile2bounds(x, y, zoom) {
+  const n = Math.pow(2, zoom);
+  const lon1 = (x / n) * 360 - 180;
+  const lon2 = ((x + 1) / n) * 360 - 180;
+
+  const lat1 = (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
+  const lat2 = (Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n))) * 180) / Math.PI;
+
+  // Return south, west, north, east
+  return [lat2, lon1, lat1, lon2];
+}
 
 export function addTrailLayer(map, trailGeoJSON, trailheadGeoJSON, showTrailsCheckbox) {
   if (!trailLayerAdded) {
@@ -98,43 +126,118 @@ export function addTrailLayer(map, trailGeoJSON, trailheadGeoJSON, showTrailsChe
 }
 
 export async function fetchTrails(map, bounds, showTrailsCheckbox) {
+  const zoom = 12;
   const [s, w, n, e] = bounds;
-  
-  // Separate queries for trails and trailheads
-  const trailQuery = `
-    [out:json][timeout:25];
-    (
-      way["highway"~"path|footway|cycleway|pedestrian|track|steps|bridleway"](${s},${w},${n},${e});
-      relation["route"~"hiking|bicycle|foot"](${s},${w},${n},${e});
-      relation["leisure"="park"](${s},${w},${n},${e});
-    );
-    out body; >; out skel qt;
-  `;
-  
-  //TODO: This query needs to be updated. 
-  const trailheadQuery = `
-    [out:json][timeout:25];
-    (
-      node["information"="trailhead"]["informal"!="yes"]["parking"!="" ](${s},${w},${n},${e});
-      node["amenity"="parking"]["access"!="private"]["hiking"="yes"](${s},${w},${n},${e});
-    );
-    out geom;
-  `;
-  
-  // Fetch both
-  const [trailRes, trailheadRes] = await Promise.all([
-    fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(trailQuery)),
-    fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(trailheadQuery))
-  ]);
-  
-  const trailData = await trailRes.json();
-  const trailheadData = await trailheadRes.json();
 
-  console.log("Fetched trailhead data:", trailheadData);
-  
-  const trailGeoJSON = osmtogeojson(trailData);
-  const trailheadGeoJSON = osmtogeojson(trailheadData);
-  
-  addTrailLayer(map, trailGeoJSON, trailheadGeoJSON, showTrailsCheckbox);
-  return { trails: trailGeoJSON, trailheads: trailheadGeoJSON };
+  // Determine tiles that cover the bounding box
+  const xMin = lon2tile(w, zoom);
+  const xMax = lon2tile(e, zoom);
+  const yMin = lat2tile(n, zoom);
+  const yMax = lat2tile(s, zoom);
+
+  const cacheExpiry = 3600000; // 1 hour in milliseconds
+
+  // Arrays to hold features from all tiles
+  let allTrailFeatures = [];
+  let allTrailheadFeatures = [];
+
+  // Helper to fetch and cache tile data
+  async function fetchTile(x, y) {
+    const cacheKey = `trailsTileCache_${zoom}_${x}_${y}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached);
+        const now = Date.now();
+        if (now - cachedData.timestamp < cacheExpiry) {
+          console.log(`Using cached tile data for tile ${zoom}/${x}/${y}`);
+          return cachedData;
+        }
+      } catch (e) {
+        // Ignore parsing errors and fetch fresh data
+      }
+    }
+
+    const [tileS, tileW, tileN, tileE] = tile2bounds(x, y, zoom);
+
+    // Overpass queries for this tile
+    const trailQuery = `
+      [out:json][timeout:25];
+      (
+        way["highway"~"path|footway|cycleway|pedestrian|track|steps|bridleway"](${tileS},${tileW},${tileN},${tileE});
+        relation["route"~"hiking|bicycle|foot"](${tileS},${tileW},${tileN},${tileE});
+        relation["leisure"="park"](${tileS},${tileW},${tileN},${tileE});
+      );
+      out body; >; out skel qt;
+    `;
+
+    const trailheadQuery = `
+      [out:json][timeout:25];
+      (
+        node["information"="trailhead"]["informal"!="yes"]["parking"!="" ](${tileS},${tileW},${tileN},${tileE});
+        node["amenity"="parking"]["access"!="private"]["hiking"="yes"](${tileS},${tileW},${tileN},${tileE});
+      );
+      out geom;
+    `;
+
+    const [trailRes, trailheadRes] = await Promise.all([
+      fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(trailQuery)),
+      fetch("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(trailheadQuery))
+    ]);
+
+    const trailData = await trailRes.json();
+    const trailheadData = await trailheadRes.json();
+
+    const trailGeoJSON = osmtogeojson(trailData);
+    const trailheadGeoJSON = osmtogeojson(trailheadData);
+
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify({
+        timestamp: Date.now(),
+        trails: trailGeoJSON,
+        trailheads: trailheadGeoJSON
+      }));
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+
+    return {
+      trails: trailGeoJSON,
+      trailheads: trailheadGeoJSON
+    };
+  }
+
+  // Fetch all tiles in parallel
+  const promises = [];
+  for (let x = xMin; x <= xMax; x++) {
+    for (let y = yMin; y <= yMax; y++) {
+      promises.push(fetchTile(x, y));
+    }
+  }
+
+  const tilesData = await Promise.all(promises);
+
+  // Merge features from all tiles
+  for (const tileData of tilesData) {
+    if (tileData.trails && tileData.trails.features) {
+      allTrailFeatures = allTrailFeatures.concat(tileData.trails.features);
+    }
+    if (tileData.trailheads && tileData.trailheads.features) {
+      allTrailheadFeatures = allTrailheadFeatures.concat(tileData.trailheads.features);
+    }
+  }
+
+  const mergedTrailGeoJSON = {
+    type: "FeatureCollection",
+    features: allTrailFeatures
+  };
+
+  const mergedTrailheadGeoJSON = {
+    type: "FeatureCollection",
+    features: allTrailheadFeatures
+  };
+
+  addTrailLayer(map, mergedTrailGeoJSON, mergedTrailheadGeoJSON, showTrailsCheckbox);
+
+  return { trails: mergedTrailGeoJSON, trailheads: mergedTrailheadGeoJSON };
 }
