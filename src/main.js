@@ -8,6 +8,7 @@ import { fetchTrails } from "./map/trails.js";
 import { exportGpx } from "./utils/export.js";
 import { setupFreeDraw } from "./map/freeDraw.js";
 import { setupUndo } from "./map/undo.js";
+import SegmentMode from "./map/segmentMode.js";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -76,7 +77,10 @@ class SatelliteToggleControl {
 }
 map.addControl(new SatelliteToggleControl(), "top-right");
 
-const Draw = new MapboxDraw({ displayControlsDefault: false });
+const Draw = new MapboxDraw({
+  displayControlsDefault: false,
+  modes: Object.assign({}, MapboxDraw.modes, { segment: SegmentMode })
+});
 map.addControl(Draw);
 
 let trailGeoJSON = null;
@@ -175,6 +179,7 @@ map.on("moveend", () => {
 const panBtn = document.getElementById("panMode");
 const drawBtn = document.getElementById("drawMode");
 const freeDrawBtn = document.getElementById("freeDrawMode");
+const segmentModeBtn = document.getElementById("segmentMode");
 const exportBtn = document.getElementById("export");
 const snapToggle = document.getElementById("snapToggle");
 const showTrailsCheckbox = document.getElementById("showTrails");
@@ -184,7 +189,7 @@ const undoBtn = document.getElementById("undo");
 // ---------- Mode setup (uses drawModes module) ----------
 // setupModes might return different small shapes depending on your implementation.
 // be defensive: accept missing functions.
-const modesApi = setupModes?.({ map, Draw, panBtn, drawBtn, freeDrawBtn }) || {};
+const modesApi = setupModes?.({ map, Draw, panBtn, drawBtn, freeDrawBtn, segmentModeBtn }) || {};
 const setModeModule = typeof modesApi.setMode === "function" ? modesApi.setMode : () => {};
 const setActive = typeof modesApi.setActive === "function" ? modesApi.setActive : () => {};
 const getMode = typeof modesApi.getMode === "function" ? modesApi.getMode : () => "pan";
@@ -198,7 +203,17 @@ function setMode(newMode) {
 
 // wire up UI -> mode
 if (panBtn) panBtn.addEventListener("click", () => setMode("pan"));
-if (drawBtn) drawBtn.addEventListener("click", () => setMode("draw"));
+if (drawBtn) drawBtn.addEventListener("click", () => setMode("draw")); // keep draw for backward compatibility
+if (segmentModeBtn) {
+  segmentModeBtn.addEventListener("click", () => {
+    setMode("segment");
+    map._mode = "segment";
+    map.getCanvas().style.cursor = "crosshair";
+    map.dragPan.disable();
+    Draw.changeMode("segment");
+    setActive(segmentModeBtn);
+  });
+}
 if (freeDrawBtn) freeDrawBtn.addEventListener("click", () => setMode("free"));
 
 // ---------- Delete all handler ----------

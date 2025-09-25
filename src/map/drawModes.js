@@ -1,8 +1,8 @@
-export function setupModes({ map, Draw, panBtn, drawBtn, freeDrawBtn }) {
+export function setupModes({ map, Draw, panBtn, drawBtn, freeDrawBtn, segmentModeBtn }) {
   let mode = "pan";
 
   function setActive(button) {
-    [panBtn, drawBtn, freeDrawBtn].forEach(b => b.classList.remove("active"));
+    [panBtn, drawBtn, freeDrawBtn, segmentModeBtn].forEach(b => b.classList.remove("active"));
     button.classList.add("active");
   }
 
@@ -28,6 +28,18 @@ export function setupModes({ map, Draw, panBtn, drawBtn, freeDrawBtn }) {
     map.getCanvas().style.cursor = "crosshair";
     Draw.changeMode("simple_select");
     setActive(freeDrawBtn);
+  };
+
+  segmentModeBtn.onclick = () => {
+    // Reset free-draw state and clear any temporary free-draw lines
+    if (Draw.clearFreeDraw) {
+      Draw.clearFreeDraw();
+    }
+    mode = "segment";
+    map.dragPan.disable();
+    map.getCanvas().style.cursor = "crosshair";
+    Draw.changeMode("segment");
+    setActive(segmentModeBtn);
   };
 
   return { getMode: () => mode, setActive };
