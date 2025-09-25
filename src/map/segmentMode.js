@@ -18,38 +18,41 @@ const SegmentMode = {
   },
 
   onClick(state, e) {
-    const lngLat = [e.lngLat.lng, e.lngLat.lat];
-    const snapped = (state.snappingEnabled && snapToTrail) ? snapToTrail(e.lngLat) : lngLat;
+    const clicked = [e.lngLat.lng, e.lngLat.lat];
+    console.log("SegmentMode click at", clicked, "snapping:", state.snappingEnabled);
 
     if (!state.startPoint) {
-      state.startPoint = snapped;
+      // First click: set the start point
+      state.startPoint = clicked;
     } else {
-      // finalize the line
-      state.line.geometry.coordinates = [state.startPoint, snapped];
-      this.addFeature(state.line);
-      this.map.fire("draw.create", { features: [state.line] });
-      state.startPoint = null;
-      state.line.geometry.coordinates = [];
-      this.map.getSource("tempFreeDraw")?.setData({
-        type: "FeatureCollection",
-        features: []
-      });
+      // Second (or later) click: finish a line from startPoint → clicked
+      const line = {
+        type: "Feature",
+        geometry: { type: "LineString", coordinates: [state.startPoint, clicked] },
+        properties: {}
+      };
+      const feature = this.newFeature(line);
+      this.addFeature(feature);
+      this.map.fire("draw.create", { features: [feature.toGeoJSON()] });
+
+      // Set new start point for chaining
+      state.startPoint = clicked;
     }
   },
 
   onMouseMove(state, e) {
     if (!state.startPoint) return;
 
-    const lngLat = [e.lngLat.lng, e.lngLat.lat];
-    const snapped = (state.snappingEnabled && snapToTrail) ? snapToTrail(e.lngLat) : lngLat;
-
-    this.map.getSource("tempFreeDraw")?.setData({
+    const preview = {
       type: "Feature",
-      geometry: {
-        type: "LineString",
-        coordinates: [state.startPoint, snapped]
-      }
-    });
+      geometry: { type: "LineString", coordinates: [state.startPoint, [e.lngLat.lng, e.lngLat.lat]] },
+      properties: { temp: true }
+    };
+
+    const src = this.map.getSource("tempFreeDraw");
+    if (src) {
+      src.setData({ type: "FeatureCollection", features: [preview] });
+    }
   },
 
   onMouseDown() {},

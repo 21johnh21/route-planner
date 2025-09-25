@@ -138,6 +138,26 @@ map.on("load", () => {
     });
   }
 
+  // Add temporary segment source + layer with a different color (blue)
+  if (!map.getSource("tempSegment")) {
+    map.addSource("tempSegment", {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+  }
+
+  if (!map.getLayer("tempSegmentLine")) {
+    map.addLayer({
+      id: "tempSegmentLine",
+      type: "line",
+      source: "tempSegment",
+      paint: {
+        "line-color": "#0000ff",
+        "line-width": 3,
+      },
+    });
+  }
+
   // Setup undo functionality
   if (undoBtn) setupUndo(map, Draw, undoBtn);
 
@@ -206,8 +226,7 @@ if (panBtn) panBtn.addEventListener("click", () => setMode("pan"));
 if (drawBtn) drawBtn.addEventListener("click", () => setMode("draw")); // keep draw for backward compatibility
 if (segmentModeBtn) {
   segmentModeBtn.addEventListener("click", () => {
-    setMode("segment");
-    map._mode = "segment";
+    map._mode = "segment"; // for your own checks
     map.getCanvas().style.cursor = "crosshair";
     map.dragPan.disable();
     Draw.changeMode("segment");
