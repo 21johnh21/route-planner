@@ -53,7 +53,9 @@ class SatelliteToggleControl {
     const button = document.createElement("button");
     button.type = "button";
     button.title = "Toggle Satellite Layer";
-    button.textContent = "Sat";
+    // Set initial text based on current visibility
+    const visibility = map.getLayoutProperty("satellite-layer", "visibility");
+    button.textContent = visibility === "visible" ? "Map" : "Sat";
     button.style.fontWeight = "bold";
     button.style.fontSize = "12px";
     button.style.cursor = "pointer";
@@ -63,8 +65,10 @@ class SatelliteToggleControl {
       const visibility = map.getLayoutProperty("satellite-layer", "visibility");
       if (visibility === "visible") {
         map.setLayoutProperty("satellite-layer", "visibility", "none");
+        button.textContent = "Sat";
       } else {
         map.setLayoutProperty("satellite-layer", "visibility", "visible");
+        button.textContent = "Map";
       }
     });
 
