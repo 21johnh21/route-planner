@@ -103,20 +103,20 @@ map.on("load", () => {
   }
 
   // Click handler for trailheads
-  map.on("click", (e) => {
-    // Query features under the click point for the trailheads layer
-    const features = map.queryRenderedFeatures(e.point, {
-      layers: ["trailheads"]
-    });
+  // map.on("click", (e) => {
+  //   // Query features under the click point for the trailheads layer
+  //   // const features = map.queryRenderedFeatures(e.point, {
+  //   //   layers: ["trailheads"]
+  //   // });
 
-    if (!features.length) return; // No trailhead here
+  //   if (!features.length) return; // No trailhead here
 
-    const feature = features[0];
+  //   const feature = features[0];
 
-    // Show popup
-    showTrailheadPopup(feature, map);
-    console.log("Trailhead clicked:", feature.properties);;
-  });
+  //   // Show popup
+  //   showTrailheadPopup(feature, map);
+  //   console.log("Trailhead clicked:", feature.properties);;
+  // });
 
   // temporary free-draw source + layer
   if (!map.getSource("tempFreeDraw")) {
@@ -175,6 +175,28 @@ map.on("load", () => {
 
   // Setup free-draw handlers
   setupFreeDraw(map, Draw, trailGeoJSON, snapToggle, SPACING_METERS, SNAP_THRESHOLD_METERS);
+
+    // Move all Mapbox Draw layers above satellite
+  map.getStyle().layers.forEach(layer => {
+    if (layer.id.startsWith("gl-draw-") || layer.id === "draw_line_string") {
+      map.moveLayer(layer.id);
+    }
+  });
+
+  // Move temp layers above satellite
+  ["tempFreeDrawLine", "tempSegmentLine"].forEach(layerId => {
+    if (map.getLayer(layerId)) {
+      map.moveLayer(layerId);
+    }
+  });
+
+  // // Log current order of layers from bottom to top
+  // const layers = map.getStyle().layers || [];
+  // console.log("Current map layers order (bottom to top):");
+  // layers.forEach(layer => {
+  //   console.log(layer.id);
+  // });
+
 });
 
 // Fetch trails on moveend when zoom is high enough; otherwise hide trail layer
