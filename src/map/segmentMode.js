@@ -37,8 +37,48 @@ const SegmentMode = {
     const clicked = [e.lngLat.lng, e.lngLat.lat];
 
     if (!state.startPoint) {
-      // First click: set the start point
-      state.startPoint = clicked;
+      // First click: set the start point (with potential snapping)
+      
+      // Gather existing endpoints for start point snapping
+      let endpoints = [];
+      if (externalDrawInstance) {
+        try {
+          const allData = externalDrawInstance.getAll();
+          if (allData && allData.features && Array.isArray(allData.features)) {
+            for (const feature of allData.features) {
+              if (feature.geometry && feature.geometry.type === "LineString" && 
+                  feature.geometry.coordinates && feature.geometry.coordinates.length > 0) {
+                const coords = feature.geometry.coordinates;
+                endpoints.push(coords[0]); // start point
+                endpoints.push(coords[coords.length - 1]); // end point
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("Could not get features for start point snapping:", err);
+        }
+      }
+
+      // Snap start point to closest endpoint if within threshold
+      let snappedStart = clicked;
+      let minDist = Infinity;
+      let startSnapped = false;
+      
+      for (const pt of endpoints) {
+        const dist = haversine([pt[1], pt[0]], [clicked[1], clicked[0]]);
+        
+        if (dist < SNAP_THRESHOLD_METERS && dist < minDist) {
+          minDist = dist;
+          snappedStart = pt;
+          startSnapped = true;
+        }
+      }
+      
+      if (startSnapped) {
+        console.log("Start point snapped to endpoint, distance:", minDist.toFixed(1), "meters");
+      }
+      
+      state.startPoint = snappedStart;
       return;
     }
 
