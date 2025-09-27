@@ -43,7 +43,6 @@ const SPACING_METERS = 25 * 0.3048; // 25 ft -> meters (~7.62)
 const SNAP_THRESHOLD_METERS = 20;
 
 // ---------- Initialize map & controls ----------
-//const map = initMap(DEFAULT_CENTER);
 const map = await initMapAtUser();
 
 // Add satellite toggle button control
@@ -136,11 +135,17 @@ class CenterOnUserControl {
 }
 map.addControl(new CenterOnUserControl(), "top-right");
 
+// Create Draw instance with SegmentMode
 const Draw = new MapboxDraw({
   displayControlsDefault: false,
-  modes: Object.assign({}, MapboxDraw.modes, { segment: SegmentMode })
+  modes: Object.assign({}, MapboxDraw.modes, { 
+    segment: SegmentMode  // Use "segment" to match drawModes.js
+  })
 });
 map.addControl(Draw);
+
+// IMPORTANT: Set the Draw instance AFTER creating it
+SegmentMode.setDrawInstance(Draw);
 
 let trailGeoJSON = null;
 
@@ -160,22 +165,6 @@ map.on("load", () => {
       layout: { visibility: "none" },
     });
   }
-
-  // Click handler for trailheads
-  // map.on("click", (e) => {
-  //   // Query features under the click point for the trailheads layer
-  //   // const features = map.queryRenderedFeatures(e.point, {
-  //   //   layers: ["trailheads"]
-  //   // });
-
-  //   if (!features.length) return; // No trailhead here
-
-  //   const feature = features[0];
-
-  //   // Show popup
-  //   showTrailheadPopup(feature, map);
-  //   console.log("Trailhead clicked:", feature.properties);;
-  // });
 
   // temporary free-draw source + layer
   if (!map.getSource("tempFreeDraw")) {
@@ -248,14 +237,6 @@ map.on("load", () => {
       map.moveLayer(layerId);
     }
   });
-
-  // // Log current order of layers from bottom to top
-  // const layers = map.getStyle().layers || [];
-  // console.log("Current map layers order (bottom to top):");
-  // layers.forEach(layer => {
-  //   console.log(layer.id);
-  // });
-
 });
 
 // Fetch trails on moveend when zoom is high enough; otherwise hide trail layer
@@ -334,8 +315,6 @@ if (snapToggleBtn) {
 }
 
 // ---------- Mode setup (uses drawModes module) ----------
-// setupModes might return different small shapes depending on your implementation.
-// be defensive: accept missing functions.
 const modesApi = setupModes?.({ map, Draw, panBtn, drawBtn, freeDrawBtn, segmentModeBtn }) || {};
 const setModeModule = typeof modesApi.setMode === "function" ? modesApi.setMode : () => {};
 const setActive = typeof modesApi.setActive === "function" ? modesApi.setActive : () => {};
@@ -350,17 +329,22 @@ function setMode(newMode) {
 
 // wire up UI -> mode
 if (panBtn) panBtn.addEventListener("click", () => setMode("pan"));
-if (drawBtn) drawBtn.addEventListener("click", () => setMode("draw")); // keep draw for backward compatibility
+if (drawBtn) drawBtn.addEventListener("click", () => setMode("draw"));
+if (freeDrawBtn) freeDrawBtn.addEventListener("click", () => setMode("free"));
+
+// Fixed segment mode button handler
 if (segmentModeBtn) {
   segmentModeBtn.addEventListener("click", () => {
+    console.log("Switching to segment mode");
     map._mode = "segment"; // for your own checks
     map.getCanvas().style.cursor = "crosshair";
     map.dragPan.disable();
+    
+    // Use "segment" to match registration and drawModes.js
     Draw.changeMode("segment");
     setActive(segmentModeBtn);
   });
 }
-if (freeDrawBtn) freeDrawBtn.addEventListener("click", () => setMode("free"));
 
 // ---------- Delete all handler ----------
 if (deleteBtn) {
