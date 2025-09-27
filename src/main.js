@@ -9,6 +9,7 @@ import { exportGpx } from "./utils/export.js";
 import { setupFreeDraw } from "./map/freeDraw.js";
 import { setupUndo } from "./map/undo.js";
 import SegmentMode from "./map/segmentMode.js";
+import { initMapAtUser } from "./map/geolocation.js";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -42,7 +43,8 @@ const SPACING_METERS = 25 * 0.3048; // 25 ft -> meters (~7.62)
 const SNAP_THRESHOLD_METERS = 20;
 
 // ---------- Initialize map & controls ----------
-const map = initMap(DEFAULT_CENTER);
+//const map = initMap(DEFAULT_CENTER);
+const map = await initMapAtUser();
 
 // Add satellite toggle button control
 class SatelliteToggleControl {
