@@ -90,6 +90,52 @@ class SatelliteToggleControl {
 }
 map.addControl(new SatelliteToggleControl(), "top-right");
 
+// Add center on user control
+class CenterOnUserControl {
+  onAdd(map) {
+    this._map = map;
+    this._container = document.createElement("div");
+    this._container.className = "mapboxgl-ctrl mapboxgl-ctrl-group";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.title = "Center on User Location";
+    button.textContent = "⦿";
+    button.style.fontWeight = "bold";
+    button.style.fontSize = "12px";
+    button.style.cursor = "pointer";
+    this._container.appendChild(button);
+
+    button.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        console.warn("Geolocation not supported by this browser");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords = [pos.coords.longitude, pos.coords.latitude];
+          map.setCenter(coords);
+          map.setZoom(13);
+          new mapboxgl.Marker({ color: "blue" })
+            .setLngLat(coords)
+            .setPopup(new mapboxgl.Popup().setText("You are here"))
+            .addTo(map);
+        },
+        (err) => {
+          console.warn("Geolocation error:", err.message);
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    });
+
+    return this._container;
+  }
+  onRemove() {
+    this._container.parentNode.removeChild(this._container);
+    this._map = undefined;
+  }
+}
+map.addControl(new CenterOnUserControl(), "top-right");
+
 const Draw = new MapboxDraw({
   displayControlsDefault: false,
   modes: Object.assign({}, MapboxDraw.modes, { segment: SegmentMode })
