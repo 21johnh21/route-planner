@@ -223,7 +223,7 @@ map.on("load", () => {
   // initial trails fetch for current view if zoomed in
   if (map.getZoom() >= 12) {
     const b = map.getBounds();
-    fetchTrails?.(map, [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()], showTrailsCheckbox)
+    fetchTrails?.(map, [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()], showTrails)
       .then((g) => { if (g) trailGeoJSON = g; })
       .catch((e) => console.warn("fetchTrails failed:", e));
   }
@@ -262,7 +262,7 @@ map.on("load", () => {
 map.on("moveend", () => {
   if (map.getZoom() >= 12) {
     const b = map.getBounds();
-    fetchTrails?.(map, [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()], showTrailsCheckbox)
+    fetchTrails?.(map, [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()], showTrails)
       .then((g) => {
         if (g) {
           trailGeoJSON = g;
@@ -282,10 +282,56 @@ const drawBtn = document.getElementById("drawMode");
 const freeDrawBtn = document.getElementById("freeDrawMode");
 const segmentModeBtn = document.getElementById("segmentMode");
 const exportBtn = document.getElementById("export");
-const snapToggle = document.getElementById("snapToggle");
-const showTrailsCheckbox = document.getElementById("showTrails");
+const showTrailsBtn = document.getElementById("showTrailsBtn");
+const snapToggleBtn = document.getElementById("snapToggleBtn");
 const deleteBtn = document.getElementById("delete");
 const undoBtn = document.getElementById("undo");
+
+// ---------- State booleans for buttons ----------
+let showTrails = true;
+let snapToggle = true;
+
+// Initialize buttons active state
+if (showTrailsBtn) {
+  showTrailsBtn.classList.add("active");
+}
+if (snapToggleBtn) {
+  snapToggleBtn.classList.add("active");
+}
+
+// Wire up showTrailsBtn toggle behavior
+if (showTrailsBtn) {
+  showTrailsBtn.addEventListener("click", () => {
+    showTrails = !showTrails;
+    if (showTrails) {
+      showTrailsBtn.classList.add("active");
+    } else {
+      showTrailsBtn.classList.remove("active");
+    }
+    // Update trail layers visibility immediately
+    if (map.getLayer && map.getLayer("trailsLayer")) {
+      map.setLayoutProperty("trailsLayer", "visibility", showTrails ? "visible" : "none");
+    }
+    if (map.getLayer && map.getLayer("trailsCenterLine")) {
+      map.setLayoutProperty("trailsCenterLine", "visibility", showTrails ? "visible" : "none");
+    }
+    if (map.getLayer && map.getLayer("trailheads")) {
+      map.setLayoutProperty("trailheads", "visibility", showTrails ? "visible" : "none");
+    }
+  });
+}
+
+// Wire up snapToggleBtn toggle behavior
+if (snapToggleBtn) {
+  snapToggleBtn.addEventListener("click", () => {
+    snapToggle = !snapToggle;
+    if (snapToggle) {
+      snapToggleBtn.classList.add("active");
+    } else {
+      snapToggleBtn.classList.remove("active");
+    }
+  });
+}
 
 // ---------- Mode setup (uses drawModes module) ----------
 // setupModes might return different small shapes depending on your implementation.
@@ -353,18 +399,5 @@ if (navigator.geolocation) {
 if (exportBtn) {
   exportBtn.addEventListener("click", () => {
     exportGpx?.(Draw, "route.gpx");
-  });
-}
-
-// show/hide trails checkbox
-if (showTrailsCheckbox) {
-  showTrailsCheckbox.addEventListener("change", (e) => {
-    const visible = !!e.target.checked;
-    if (map.getLayer && map.getLayer("trailsLayer")) {
-      map.setLayoutProperty("trailsLayer", "visibility", visible ? "visible" : "none");
-    }
-    if (map.getLayer && map.getLayer("trailsCenterLine")) {
-      map.setLayoutProperty("trailsCenterLine", "visibility", visible ? "visible" : "none");
-    }
   });
 }

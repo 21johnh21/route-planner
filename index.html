@@ -35,18 +35,34 @@
           <button id="undo" title="Undo"><i class="fa-solid fa-rotate-left"></i></button>
         </div>
 
-        <label class="switch">
-          Snap to trails
-          <input type="checkbox" id="snapToggle" checked />
-          <span class="slider"></span>
-        </label>
-
-        <label class="switch">
-          Show trails
-          <input type="checkbox" id="showTrails" checked />
-          <span class="slider"></span>
-        </label>
+        <div class="mode-group" id="optionsGroup">
+          <button id="snapToggleBtn" class="active" title="Snap to trails">
+            <i class="fa-solid fa-magnet"></i>
+          </button>
+          <button id="showTrailsBtn" class="active" title="Show trails">
+            <i class="fa-solid fa-route"></i>
+          </button>
+        </div>
+        
       </div>
     <script type="module" src="/src/main.js"></script>
+    <script>
+      // Option toggles
+      let snapToggle = true;
+      let showTrails = true;
+
+      const snapToggleBtn = document.getElementById("snapToggleBtn");
+      const showTrailsBtn = document.getElementById("showTrailsBtn");
+
+      snapToggleBtn.addEventListener("click", () => {
+        snapToggle = !snapToggle;
+        snapToggleBtn.classList.toggle("active", snapToggle);
+      });
+
+      showTrailsBtn.addEventListener("click", () => {
+        showTrails = !showTrails;
+        showTrailsBtn.classList.toggle("active", showTrails);
+      });
+    </script>
   </body>
 </html>

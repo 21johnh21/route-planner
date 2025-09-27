@@ -31,7 +31,7 @@ function tile2bounds(x, y, zoom) {
   return [lat2, lon1, lat1, lon2];
 }
 
-export function addTrailLayer(map, trailGeoJSON, trailheadGeoJSON, showTrailsCheckbox) {
+export function addTrailLayer(map, trailGeoJSON, trailheadGeoJSON, showTrails = true) {
   if (!trailLayerAdded) {
     map.addSource("trails", { type: "geojson", data: trailGeoJSON });
     map.addLayer({
@@ -117,7 +117,7 @@ export function addTrailLayer(map, trailGeoJSON, trailheadGeoJSON, showTrailsChe
     }
   }
 
-  const visible = showTrailsCheckbox.checked;
+  const visible = showTrails;
   map.setLayoutProperty("trailsLayer", "visibility", visible ? "visible" : "none");
   map.setLayoutProperty("trailsCenterLine", "visibility", visible ? "visible" : "none");
   if (map.getLayer("trailheads")) {
@@ -125,7 +125,7 @@ export function addTrailLayer(map, trailGeoJSON, trailheadGeoJSON, showTrailsChe
   }
 }
 
-export async function fetchTrails(map, bounds, showTrailsCheckbox) {
+export async function fetchTrails(map, bounds, showTrails) {
   const zoom = 12;
   const [s, w, n, e] = bounds;
 
@@ -237,7 +237,7 @@ export async function fetchTrails(map, bounds, showTrailsCheckbox) {
     features: allTrailheadFeatures
   };
 
-  addTrailLayer(map, mergedTrailGeoJSON, mergedTrailheadGeoJSON, showTrailsCheckbox);
+  addTrailLayer(map, mergedTrailGeoJSON, mergedTrailheadGeoJSON, showTrails);
 
   return { trails: mergedTrailGeoJSON, trailheads: mergedTrailheadGeoJSON };
 }

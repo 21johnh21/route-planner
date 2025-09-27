@@ -69,10 +69,12 @@ export function setupFreeDraw(map, Draw, trailGeoJSON, snapToggle, SPACING_METER
     tempCoords = [];
   });
 
-  // ---------- snapToggle event ----------
-  if (snapToggle) {
-    snapToggle.addEventListener("change", (e) => {
-      snappingEnabled = !!e.target.checked;
+  // ---------- snapToggle button ----------
+  if (snapToggle && snapToggle instanceof HTMLElement) {
+    snappingEnabled = snapToggle.classList.contains("active");
+    snapToggle.addEventListener("click", () => {
+      snappingEnabled = !snappingEnabled;
+      snapToggle.classList.toggle("active", snappingEnabled);
     });
   }
 }
