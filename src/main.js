@@ -56,7 +56,11 @@ class SatelliteToggleControl {
     button.type = "button";
     button.title = "Toggle Satellite Layer";
     // Set initial text based on current visibility
-    const visibility = map.getLayoutProperty("satellite-layer", "visibility");
+    const hasLayer = map.getLayer("satellite-layer");
+    let visibility = "none";
+    if (hasLayer) {
+      visibility = map.getLayoutProperty("satellite-layer", "visibility");
+    }
     button.textContent = visibility === "visible" ? "Map" : "Sat";
     button.style.fontWeight = "bold";
     button.style.fontSize = "12px";
@@ -64,6 +68,10 @@ class SatelliteToggleControl {
     this._container.appendChild(button);
 
     button.addEventListener("click", () => {
+      if (!map.getLayer("satellite-layer")) {
+        console.warn("Satellite layer not yet available");
+        return;
+      }
       const visibility = map.getLayoutProperty("satellite-layer", "visibility");
       if (visibility === "visible") {
         map.setLayoutProperty("satellite-layer", "visibility", "none");
@@ -73,7 +81,6 @@ class SatelliteToggleControl {
         button.textContent = "Map";
       }
     });
-
     return this._container;
   }
   onRemove() {
