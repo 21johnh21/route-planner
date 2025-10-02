@@ -31,6 +31,7 @@
 
         <div class="mode-group">
           <button id="export" title="Export GPX"><i class="fa-solid fa-download"></i></button>
+          <button id="importGpx" title="Import GPX"><i class="fa-solid fa-file-import"></i></button>
           <button id="delete" title="Delete all routes"><i class="fa-solid fa-trash"></i></button>
           <button id="undo" title="Undo"><i class="fa-solid fa-rotate-left"></i></button>
         </div>
@@ -43,7 +44,7 @@
             <i class="fa-solid fa-route"></i>
           </button>
         </div>
-        
+        <input type="file" id="gpxUpload" accept=".gpx" style="display:none" />
       </div>
     <script type="module" src="/src/main.js"></script>
     <script>
@@ -62,6 +63,14 @@
       showTrailsBtn.addEventListener("click", () => {
         showTrails = !showTrails;
         showTrailsBtn.classList.toggle("active", showTrails);
+      });
+
+      // GPX import button triggers hidden file input
+      const importGpxBtn = document.getElementById("importGpx");
+      const gpxUploadInput = document.getElementById("gpxUpload");
+
+      importGpxBtn.addEventListener("click", () => {
+        gpxUploadInput.click();
       });
     </script>
   </body>

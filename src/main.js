@@ -6,6 +6,7 @@ import { setupModes } from "./map/drawModes.js";
 import { snapToTrail, haversine } from "./map/snapping.js";
 import { fetchTrails } from "./map/trails.js";
 import { exportGpx } from "./utils/export.js";
+import { importGPX } from "./utils/import";
 import { setupFreeDraw } from "./map/freeDraw.js";
 import { setupUndo } from "./map/undo.js";
 import SegmentMode from "./map/segmentMode.js";
@@ -385,3 +386,11 @@ if (exportBtn) {
     exportGpx?.(Draw, "route.gpx");
   });
 }
+
+const upload = document.getElementById("gpxUpload");
+upload.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    importGPX(file, map); // pass in your Mapbox `map`
+  }
+});
