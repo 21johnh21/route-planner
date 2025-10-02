@@ -387,10 +387,18 @@ if (exportBtn) {
   });
 }
 
-const upload = document.getElementById("gpxUpload");
-upload.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    importGPX(file, map); // pass in your Mapbox `map`
-  }
-});
+const importGpxBtn = document.getElementById("importGpx");
+const gpxUploadInput = document.getElementById("gpxUpload");
+
+if (importGpxBtn && gpxUploadInput) {
+  importGpxBtn.addEventListener("click", () => {
+    gpxUploadInput.click();
+  });
+
+  gpxUploadInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      importGPX(file, map, Draw); // now passing Draw as well
+    }
+  });
+}
