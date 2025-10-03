@@ -1,3 +1,6 @@
+// API Configuration
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+
 // Sidebar functionality
 const sidebar = document.getElementById("sidebar");
 const sidebarToggle = document.getElementById("sidebarToggle");
@@ -15,7 +18,27 @@ const confirmPasswordGroup = document.getElementById("confirmPasswordGroup");
 
 let isLoggedIn = false;
 let currentUser = null;
+let authToken = null;
 let isSignUpMode = false;
+
+// Check for existing auth token on page load
+function initAuth() {
+  try {
+    const token = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('userData');
+    
+    if (token && userData) {
+      authToken = token;
+      currentUser = JSON.parse(userData);
+      isLoggedIn = true;
+      updateProfileUI();
+    }
+  } catch (error) {
+    console.warn('Could not access localStorage:', error);
+    // Clear any partial data
+    clearStorage();
+  }
+}
 
 // Toggle sidebar
 sidebarToggle.addEventListener("click", () => {
@@ -73,48 +96,132 @@ toggleAuthBtn.addEventListener("click", () => {
   }
 });
 
-// Social login buttons
+// Social login buttons (placeholder - implement OAuth flows later)
 document.querySelector(".google-btn").addEventListener("click", () => {
-  const email = "user@gmail.com";
-  const name = "Google User";
-  currentUser = { name, email };
-  isLoggedIn = true;
-  updateProfileUI();
-  loginModal.classList.remove("active");
-  resetAuthForm();
+  alert("Google Sign-In coming soon! Please use email/password for now.");
 });
 
 document.querySelector(".apple-btn").addEventListener("click", () => {
-  const email = "user@icloud.com";
-  const name = "Apple User";
-  currentUser = { name, email };
-  isLoggedIn = true;
-  updateProfileUI();
-  loginModal.classList.remove("active");
-  resetAuthForm();
+  alert("Apple Sign-In coming soon! Please use email/password for now.");
 });
 
 // Handle login/signup
-loginForm.addEventListener("submit", (e) => {
+loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+  
   const email = document.getElementById("emailInput").value;
   const password = document.getElementById("passwordInput").value;
   const confirmPassword = document.getElementById("confirmPasswordInput").value;
 
-  if (isSignUpMode && password !== confirmPassword) {
-    alert("Passwords do not match!");
-    return;
-  }
+  // Disable submit button during request
+  submitBtn.disabled = true;
+  submitBtn.textContent = isSignUpMode ? "Creating Account..." : "Logging In...";
 
-  const name = email.split("@")[0];
-  
-  currentUser = { name, email };
-  isLoggedIn = true;
-  
-  updateProfileUI();
-  loginModal.classList.remove("active");
-  resetAuthForm();
+  try {
+    if (isSignUpMode) {
+      // Validate passwords match
+      if (password !== confirmPassword) {
+        showError("Passwords do not match!");
+        return;
+      }
+      
+      // Sign Up
+      await signUp(email, password);
+    } else {
+      // Login
+      await login(email, password);
+    }
+  } catch (error) {
+    console.error("Auth error:", error);
+  } finally {
+    // Re-enable submit button
+    submitBtn.disabled = false;
+    submitBtn.textContent = isSignUpMode ? "Create Account" : "Log In";
+  }
 });
+
+// Sign Up API call
+async function signUp(email, password) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Sign up failed');
+    }
+
+    showSuccess("Account created successfully! Please log in.");
+    
+    // Switch to login mode
+    isSignUpMode = false;
+    modalTitle.textContent = "Log In";
+    submitBtn.textContent = "Log In";
+    toggleText.textContent = "Don't have an account?";
+    toggleAuthBtn.textContent = "Create Account";
+    confirmPasswordGroup.style.display = "none";
+    document.getElementById("confirmPasswordInput").required = false;
+    
+    // Clear password fields
+    document.getElementById("passwordInput").value = "";
+    document.getElementById("confirmPasswordInput").value = "";
+  } catch (error) {
+    showError(error.message || 'Sign up failed. Please try again.');
+    throw error;
+  }
+}
+
+// Login API call
+async function login(email, password) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Login failed');
+    }
+
+    // Store token and user data
+    authToken = data.token;
+    
+    // Extract user info from email
+    const name = email.split("@")[0];
+    currentUser = { name, email };
+    
+    // Try to store in localStorage, but continue even if it fails
+    try {
+      localStorage.setItem('authToken', authToken);
+      localStorage.setItem('userData', JSON.stringify(currentUser));
+    } catch (storageError) {
+      console.warn('Could not save to localStorage:', storageError);
+      // Authentication still works, just won't persist across page reloads
+    }
+    
+    isLoggedIn = true;
+    
+    updateProfileUI();
+    loginModal.classList.remove("active");
+    resetAuthForm();
+    
+    showSuccess("Logged in successfully!");
+  } catch (error) {
+    showError(error.message || 'Invalid email or password.');
+    throw error;
+  }
+}
 
 // Reset form to login mode
 function resetAuthForm() {
@@ -126,6 +233,7 @@ function resetAuthForm() {
   toggleAuthBtn.textContent = "Create Account";
   confirmPasswordGroup.style.display = "none";
   document.getElementById("confirmPasswordInput").required = false;
+  submitBtn.disabled = false;
 }
 
 // Update profile UI
@@ -156,5 +264,49 @@ function updateProfileUI() {
 function logout() {
   isLoggedIn = false;
   currentUser = null;
+  authToken = null;
+  
+  // Clear stored data
+  clearStorage();
+  
   updateProfileUI();
+  showSuccess("Logged out successfully!");
 }
+
+// Helper to safely clear storage
+function clearStorage() {
+  try {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+  } catch (error) {
+    console.warn('Could not clear localStorage:', error);
+  }
+}
+
+// Helper function to show error messages
+function showError(message) {
+  // You can replace this with a nicer toast/notification system
+  alert(message);
+}
+
+// Helper function to show success messages
+function showSuccess(message) {
+  // You can replace this with a nicer toast/notification system
+  console.log(message);
+}
+
+// Export auth utilities for use in other modules
+export function getAuthToken() {
+  return authToken;
+}
+
+export function isAuthenticated() {
+  return isLoggedIn;
+}
+
+export function getCurrentUser() {
+  return currentUser;
+}
+
+// Initialize auth on page load
+initAuth();
