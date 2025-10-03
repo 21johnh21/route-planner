@@ -1,70 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>GPX Drawer MVP</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/style.css" />
-    <link
-      href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-  </head>
-  <body>
-    <div id="map"></div>
-      <div class="controls">
 
-        <div class="mode-group">
-          <button id="panMode" title="Pan"><i class="fa-solid fa-hand"></i></button>
-          <button id="drawMode" title="Draw"><i class="fa-solid fa-pencil"></i></button>
-          <button id="segmentMode" title="Segment"><i class="fa-solid fa-draw-polygon"></i></button>
-          <button id="freeDrawMode" title="Free Draw"><i class="fa-solid fa-paintbrush"></i></button>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <title>GPX Drawer MVP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/style.css" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
 
-        <div class="mode-group">
-          <button id="export" title="Export GPX"><i class="fa-solid fa-download"></i></button>
-          <button id="importGpx" title="Import GPX"><i class="fa-solid fa-file-import"></i></button>
-          <button id="delete" title="Delete all routes"><i class="fa-solid fa-trash"></i></button>
-          <button id="undo" title="Undo"><i class="fa-solid fa-rotate-left"></i></button>
-        </div>
+<body>
+  <!-- Sidebar Toggle Button -->
+  <button class="sidebar-toggle" id="sidebarToggle">
+    <i class="fa-solid fa-bars"></i>
+  </button>
 
-        <div class="mode-group" id="optionsGroup">
-          <button id="snapToggleBtn" class="active" title="Snap to trails">
-            <i class="fa-solid fa-magnet"></i>
-          </button>
-          <button id="showTrailsBtn" class="active" title="Show trails">
-            <i class="fa-solid fa-route"></i>
-          </button>
-        </div>
-        <input type="file" id="gpxUpload" accept=".gpx" style="display:none" />
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="profile-section">
+      <div class="profile-icon" id="profileIcon">
+        <i class="fa-solid fa-user"></i>
       </div>
-    <script type="module" src="/src/main.js"></script>
-    <script>
-      // Option toggles
-      let snapToggle = true;
-      let showTrails = true;
+      <div class="profile-info logged-out" id="profileInfo">
+        <div>Not logged in</div>
+        <button class="login-btn" id="loginBtn">Log In</button>
+      </div>
+    </div>
 
-      const snapToggleBtn = document.getElementById("snapToggleBtn");
-      const showTrailsBtn = document.getElementById("showTrailsBtn");
+    <div class="sidebar-content">
+      <div class="sidebar-section">
+        <h3>Navigation</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#"><i class="fa-solid fa-map"></i> My Routes</a></li>
+          <li><a href="#"><i class="fa-solid fa-heart"></i> Favorites</a></li>
+          <li><a href="#"><i class="fa-solid fa-clock"></i> Recent</a></li>
+          <li><a href="#"><i class="fa-solid fa-folder"></i> Collections</a></li>
+        </ul>
+      </div>
 
-      snapToggleBtn.addEventListener("click", () => {
-        snapToggle = !snapToggle;
-        snapToggleBtn.classList.toggle("active", snapToggle);
-      });
+      <div class="sidebar-section">
+        <h3>Tools</h3>
+        <ul class="sidebar-menu">
+          <li><a href="#"><i class="fa-solid fa-chart-line"></i> Statistics</a></li>
+          <li><a href="#"><i class="fa-solid fa-cog"></i> Settings</a></li>
+          <li><a href="#"><i class="fa-solid fa-circle-info"></i> Help</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
-      showTrailsBtn.addEventListener("click", () => {
-        showTrails = !showTrails;
-        showTrailsBtn.classList.toggle("active", showTrails);
-      });
+  <!-- Login Modal -->
+  <div class="modal" id="loginModal">
+    <div class="modal-content">
+      <h2>Log In</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="emailInput" placeholder="Enter your email" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="passwordInput" placeholder="Enter your password" required />
+        </div>
+        <div class="modal-buttons">
+          <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+          <button type="submit" class="btn-primary">Log In</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-    </script>
-  </body>
+  <div id="map"></div>
+  <div class="controls">
+    <div class="mode-group">
+      <button id="panMode" title="Pan"><i class="fa-solid fa-hand"></i></button>
+      <button id="drawMode" title="Draw"><i class="fa-solid fa-pencil"></i></button>
+      <button id="segmentMode" title="Segment"><i class="fa-solid fa-draw-polygon"></i></button>
+      <button id="freeDrawMode" title="Free Draw"><i class="fa-solid fa-paintbrush"></i></button>
+    </div>
+    <div class="mode-group">
+      <button id="export" title="Export GPX"><i class="fa-solid fa-download"></i></button>
+      <button id="importGpx" title="Import GPX"><i class="fa-solid fa-file-import"></i></button>
+      <button id="delete" title="Delete all routes"><i class="fa-solid fa-trash"></i></button>
+      <button id="undo" title="Undo"><i class="fa-solid fa-rotate-left"></i></button>
+    </div>
+    <div class="mode-group" id="optionsGroup">
+      <button id="snapToggleBtn" class="active" title="Snap to trails">
+        <i class="fa-solid fa-magnet"></i>
+      </button>
+      <button id="showTrailsBtn" class="active" title="Show trails">
+        <i class="fa-solid fa-route"></i>
+      </button>
+    </div>
+    <input type="file" id="gpxUpload" accept=".gpx" style="display:none" />
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+  <script>
+    // Option toggles
+    let snapToggle = true;
+    let showTrails = true;
+    const snapToggleBtn = document.getElementById("snapToggleBtn");
+    const showTrailsBtn = document.getElementById("showTrailsBtn");
+    snapToggleBtn.addEventListener("click", () => {
+      snapToggle = !snapToggle;
+      snapToggleBtn.classList.toggle("active", snapToggle);
+    });
+    showTrailsBtn.addEventListener("click", () => {
+      showTrails = !showTrails;
+      showTrailsBtn.classList.toggle("active", showTrails);
+    });
+
+    // Sidebar functionality
+    const sidebar = document.getElementById("sidebar");
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginModal = document.getElementById("loginModal");
+    const loginForm = document.getElementById("loginForm");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const profileIcon = document.getElementById("profileIcon");
+    const profileInfo = document.getElementById("profileInfo");
+
+    let isLoggedIn = false;
+    let currentUser = null;
+
+    // Toggle sidebar
+    sidebarToggle.addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+    });
+
+    // Close sidebar when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target) && sidebar.classList.contains("open")) {
+        sidebar.classList.remove("open");
+      }
+    });
+
+    // Open login modal
+    loginBtn.addEventListener("click", () => {
+      loginModal.classList.add("active");
+    });
+
+    profileIcon.addEventListener("click", () => {
+      if (!isLoggedIn) {
+        loginModal.classList.add("active");
+      }
+    });
+
+    // Close login modal
+    cancelBtn.addEventListener("click", () => {
+      loginModal.classList.remove("active");
+    });
+
+    loginModal.addEventListener("click", (e) => {
+      if (e.target === loginModal) {
+        loginModal.classList.remove("active");
+      }
+    });
+
+    // Handle login
+    loginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("emailInput").value;
+      const name = email.split("@")[0];
+
+      currentUser = { name, email };
+      isLoggedIn = true;
+
+      updateProfileUI();
+      loginModal.classList.remove("active");
+      loginForm.reset();
+    });
+
+    // Update profile UI
+    function updateProfileUI() {
+      if (isLoggedIn && currentUser) {
+        profileInfo.className = "profile-info logged-in";
+        profileInfo.innerHTML = `
+<div class="username">${currentUser.name}</div>
+<div class="email">${currentUser.email}</div>
+<button class="logout-btn" id="logoutBtn">Log Out</button>
+`;
+
+        document.getElementById("logoutBtn").addEventListener("click", logout);
+      } else {
+        profileInfo.className = "profile-info logged-out";
+        profileInfo.innerHTML = `
+<div>Not logged in</div>
+<button class="login-btn" id="loginBtn">Log In</button>
+`;
+
+        document.getElementById("loginBtn").addEventListener("click", () => {
+          loginModal.classList.add("active");
+        });
+      }
+    }
+
+    // Logout
+    function logout() {
+      isLoggedIn = false;
+      currentUser = null;
+      updateProfileUI();
+    }
+  </script>
+</body>
+
 </html>
