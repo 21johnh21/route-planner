@@ -54,7 +54,7 @@
   <!-- Login Modal -->
   <div class="modal" id="loginModal">
     <div class="modal-content">
-      <h2>Log In</h2>
+      <h2 id="modalTitle">Log In</h2>
       <form id="loginForm">
         <div class="form-group">
           <label>Email</label>
@@ -64,11 +64,32 @@
           <label>Password</label>
           <input type="password" id="passwordInput" placeholder="Enter your password" required />
         </div>
+        <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+          <label>Confirm Password</label>
+          <input type="password" id="confirmPasswordInput" placeholder="Confirm your password" />
+        </div>
         <div class="modal-buttons">
           <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
-          <button type="submit" class="btn-primary">Log In</button>
+          <button type="submit" class="btn-primary" id="submitBtn">Log In</button>
         </div>
       </form>
+      <div class="divider">
+        <span>OR</span>
+      </div>
+      <div class="social-login">
+        <button type="button" class="social-btn google-btn">
+          <i class="fa-brands fa-google"></i>
+          Continue with Google
+        </button>
+        <button type="button" class="social-btn apple-btn">
+          <i class="fa-brands fa-apple"></i>
+          Continue with Apple
+        </button>
+      </div>
+      <div class="toggle-auth">
+        <span id="toggleText">Don't have an account?</span>
+        <button type="button" id="toggleAuthBtn">Create Account</button>
+      </div>
     </div>
   </div>
 
