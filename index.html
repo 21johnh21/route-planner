@@ -119,6 +119,7 @@
   </div>
 
   <script type="module" src="/src/main.js"></script>
+  <script type="module" src="/src/sidebar.js"></script>
   <script>
     // Option toggles
     let snapToggle = true;
@@ -133,99 +134,8 @@
       showTrails = !showTrails;
       showTrailsBtn.classList.toggle("active", showTrails);
     });
-
-    // Sidebar functionality
-    const sidebar = document.getElementById("sidebar");
-    const sidebarToggle = document.getElementById("sidebarToggle");
-    const loginBtn = document.getElementById("loginBtn");
-    const loginModal = document.getElementById("loginModal");
-    const loginForm = document.getElementById("loginForm");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const profileIcon = document.getElementById("profileIcon");
-    const profileInfo = document.getElementById("profileInfo");
-
-    let isLoggedIn = false;
-    let currentUser = null;
-
-    // Toggle sidebar
-    sidebarToggle.addEventListener("click", () => {
-      sidebar.classList.toggle("open");
-    });
-
-    // Close sidebar when clicking outside
-    document.addEventListener("click", (e) => {
-      if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target) && sidebar.classList.contains("open")) {
-        sidebar.classList.remove("open");
-      }
-    });
-
-    // Open login modal
-    loginBtn.addEventListener("click", () => {
-      loginModal.classList.add("active");
-    });
-
-    profileIcon.addEventListener("click", () => {
-      if (!isLoggedIn) {
-        loginModal.classList.add("active");
-      }
-    });
-
-    // Close login modal
-    cancelBtn.addEventListener("click", () => {
-      loginModal.classList.remove("active");
-    });
-
-    loginModal.addEventListener("click", (e) => {
-      if (e.target === loginModal) {
-        loginModal.classList.remove("active");
-      }
-    });
-
-    // Handle login
-    loginForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const email = document.getElementById("emailInput").value;
-      const name = email.split("@")[0];
-
-      currentUser = { name, email };
-      isLoggedIn = true;
-
-      updateProfileUI();
-      loginModal.classList.remove("active");
-      loginForm.reset();
-    });
-
-    // Update profile UI
-    function updateProfileUI() {
-      if (isLoggedIn && currentUser) {
-        profileInfo.className = "profile-info logged-in";
-        profileInfo.innerHTML = `
-<div class="username">${currentUser.name}</div>
-<div class="email">${currentUser.email}</div>
-<button class="logout-btn" id="logoutBtn">Log Out</button>
-`;
-
-        document.getElementById("logoutBtn").addEventListener("click", logout);
-      } else {
-        profileInfo.className = "profile-info logged-out";
-        profileInfo.innerHTML = `
-<div>Not logged in</div>
-<button class="login-btn" id="loginBtn">Log In</button>
-`;
-
-        document.getElementById("loginBtn").addEventListener("click", () => {
-          loginModal.classList.add("active");
-        });
-      }
-    }
-
-    // Logout
-    function logout() {
-      isLoggedIn = false;
-      currentUser = null;
-      updateProfileUI();
-    }
   </script>
+
 </body>
 
 </html>
